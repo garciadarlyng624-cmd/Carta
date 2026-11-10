@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Para ti - Carta Interactiva</title>
+  <!-- Tailwind CSS para diseño y respuestas dinámicas -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts para tipografías elegantes de carta/pergamino -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    /* Estilos personalizados y utilidades de animación */
+    body {
+      background-color: #0d0907;
+      color: #d1b894;
+      font-family: 'Montserrat', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overflow: hidden;
+    }
+
+    .font-handwriting {
+      font-family: 'Great Vibes', cursive;
+    }
+
+    .font-letter-body {
+      font-family: 'Dancing Script', cursive;
+    }
+
+    /* Fondo principal con viñeta y resplandor central cálido */
+    .bg-vignette {
+      background: radial-gradient(circle at 50% 45%, #231610 0%, #0f0a07 60%, #050302 100%);
+    }
+
+    /* Estilos del sobre e interacciones */
+    .envelope-wrapper {
+      perspective: 1000px;
+    }
+
+    .envelope {
+      position: relative;
+      width: 280px;
+      height: 180px;
+      background: #e6d3ba;
+      border-radius: 6px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 0 15px rgba(120,80,40,0.15);
+      cursor: pointer;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    @media (min-width: 640px) {
+      .envelope {
+        width: 320px;
+        height: 200px;
+      }
+    }
+
+    .envelope:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 20px rgba(212,160,89,0.2);
+    }
+
+    /* Solapa superior del sobre */
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 140px solid transparent;
+      border-right: 140px solid transparent;
+      border-top: 110px solid #d9bf9c;
+      transform-origin: top;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 4;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+
+    @media (min-width: 640px) {
+      .envelope-flap {
+        border-left-width: 160px;
+        border-right-width: 160px;
+        border-top-width: 125px;
+      }
+    }
+
+    .envelope.open .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+
+    /* Bolsillo interior del sobre */
+    .envelope-pocket {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, transparent 40%, #cca276 100%);
+      border-radius: 6px;
+      z-index: 3;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0, 50% 55%);
+    }
+
+    /* Sello de cera */
+    .wax-seal {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 52px;
+      height: 52px;
+      background: radial-gradient(circle at 35% 35%, #b92b2b 0%, #7a1515 70%, #4a0a0a 100%);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -2px 4px rgba(0,0,0,0.6);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+
+    .wax-seal::after {
+      content: '♥';
+      color: #3d0808;
+      font-size: 22px;
+      text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+    }
+
+    .envelope.open .wax-seal {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.5);
+      pointer-events: none;
+    }
+
+    /* Pergamino / Carta */
+    .paper-texture {
+      background: #f5edd6;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 0%, rgba(240,225,195,0.5) 100%),
+        url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 40px rgba(160, 120, 70, 0.2);
+    }
+
+    /* Animación de la Vela */
+    .flame {
+      width: 12px;
+      height: 24px;
+      background: linear-gradient(to bottom, #ffffff 0%, #ffeb3b 25%, #ff9800 60%, rgba(255, 87, 34, 0) 100%);
+      border-radius: 50% 50% 20% 20%;
+      filter: drop-shadow(0 0 12px #ff9800) drop-shadow(0 0 25px #ff5722);
+      animation: flicker 0.1s infinite alternate;
+      transform-origin: center bottom;
+    }
+
+    .candle-glow {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(255, 152, 0, 0.2) 0%, rgba(255, 152, 0, 0) 70%);
+      border-radius: 50%;
+      top: -50px;
+      left: -54px;
+      pointer-events: none;
+      animation: pulseGlow 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes flicker {
+      0% { transform: scale(1) rotate(-1deg); opacity: 0.95; }
+      20% { transform: scale(1.05, 0.95) rotate(1deg); opacity: 1; }
+      40% { transform: scale(0.98, 1.02) rotate(-2deg); opacity: 0.9; }
+    /* Pluma de escribir animada con posicionamiento preciso */
+    .quill-pen {
+      position: absolute;
+      width: 55px;
+      height: 55px;
+      pointer-events: none;
+      z-index: 50;
+      transition: left 0.05s linear, top 0.05s linear, transform 0.1s ease;
+      filter: drop-shadow(3px 5px 6px rgba(0,0,0,0.4));
+      transform-origin: bottom left;
+    }
+
+    .quill-writing {
+      animation: quillMotion 0.15s infinite alternate ease-in-out;
+    }
+
+    @keyframes quillMotion {
+      0% { transform: rotate(0deg) scale(1); }
+      100% { transform: rotate(-8deg) translateY(-2px) scale(1.02); }
+    }
+
+    /* Animación de pétalos cayendo suavemente */
+    @keyframes fallingPetal {
+      0% {
+        transform: translateY(-10px) rotate(0deg) translateX(0);
+        opacity: 0.8;
+      }
+      50% {
+        transform: translateY(120px) rotate(180deg) translateX(15px);
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(240px) rotate(360deg) translateX(-10px);
+        opacity: 0;
+      }
+    }
+
+    .animate-petal {
+      animation: fallingPetal 6s infinite linear;
+    }
+
+    /* Estilos del scroll personalizables */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(139, 90, 43, 0.3);
+      border-radius: 10px;
+    }
+
+    /* Animación del pulso de audio */
+    @keyframes audioWave {
+      0%, 100% { height: 6px; }
+      50% { height: 16px; }
+    }
+    .bar-1 { animation: audioWave 1s infinite ease-in-out 0.1s; }
+    .bar-2 { animation: audioWave 1s infinite ease-in-out 0.3s; }
+    .bar-3 { animation: audioWave 1s infinite ease-in-out 0.5s; }
+  </style>
+</head>
+<body class="h-screen w-screen bg-vignette flex flex-col items-center justify-center relative overflow-hidden">
+
+  <!-- ==================== ELEMENTOS AMBIENTALES FIJOS ==================== -->
+  
+  <!-- Vela en la esquina inferior izquierda -->
+  <div class="fixed bottom-3 left-4 sm:bottom-6 sm:left-8 z-30 flex flex-col items-center pointer-events-none">
+    <div class="relative flex flex-col items-center">
+      <!-- Llama -->
+      <div class="flame mb-[-2px]"></div>
+      <!-- Mecha -->
+      <div class="w-[2px] h-3 bg-gray-800"></div>
+      <!-- Resplandor -->
+      <div class="candle-glow"></div>
+    </div>
+    <!-- Cuerpo de la vela -->
+    <div class="w-8 h-20 sm:w-10 sm:h-28 bg-gradient-to-r from-stone-200 via-amber-100 to-stone-300 rounded-t-sm shadow-2xl relative border-t border-amber-200/40">
+      <!-- Cera derretida -->
+      <div class="absolute top-0 left-1 w-3 h-4 bg-amber-50 rounded-b-full opacity-80"></div>
+      <div class="absolute top-0 right-2 w-2 h-6 bg-amber-50 rounded-b-full opacity-80"></div>
+    </div>
+    <!-- Base de la vela -->
+    <div class="w-12 sm:w-14 h-2 bg-stone-800 rounded-full shadow-lg"></div>
+  </div>
+
+  <!-- Botón de Música en la esquina inferior derecha -->
+  <button id="musicBtn" onclick="toggleAudio()" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-8 z-40 w-12 h-12 sm:w-14 sm:h-14 bg-amber-900/60 hover:bg-amber-800/80 border border-amber-500/40 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-md transition-all active:scale-95 group" aria-label="Reproducir música de fondo">
+    <div id="audioBars" class="hidden flex items-end justify-center gap-[3px] h-4">
+      <span class="w-[3px] bg-amber-300 rounded-full bar-1"></span>
+      <span class="w-[3px] bg-amber-300 rounded-full bar-2"></span>
+      <span class="w-[3px] bg-amber-300 rounded-full bar-3"></span>
+    </div>
+    <svg id="musicIcon" class="w-6 h-6 text-amber-200/80 group-hover:text-amber-100 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+    </svg>
+  </button>
+
+  <!-- Contenedor Principal Interactiva (Simulación Móvil Centrada) -->
+  <main class="w-full max-w-md h-full sm:h-[88vh] flex flex-col items-center justify-center relative p-4 z-20">
+
+    <!-- ==================== PASO 1: VISTA DEL SOBRE DE LA CARTA ==================== -->
+    <section id="step1" class="flex flex-col items-center justify-center w-full h-full transition-all duration-1000">
+      
+      <!-- Mensaje Inicial Superior -->
+      <div id="envelopeHeader" class="text-center mb-8 opacity-0 transition-all duration-1000 transform -translate-y-4">
+        <h1 class="text-3xl sm:text-4xl font-light italic text-amber-100/90 tracking-wide font-handwriting">
+          Te llegó una carta
+        </h1>
+        <p class="text-[10px] sm:text-xs tracking-[0.25em] text-amber-300/60 uppercase mt-1 font-sans">
+          Escrita solo para ti
+        </p>
+      </div>
+
+      <!-- Sobre Interactivo -->
+      <div class="envelope-wrapper my-auto">
+        <div id="envelope" class="envelope flex items-center justify-center" onclick="openLetter()">
+          <!-- Solapa Superior -->
+          <div class="envelope-flap"></div>
+          <!-- Bolsillo Inferior -->
+          <div class="envelope-pocket"></div>
+          <!-- Sello de Cera -->
+          <div class="wax-seal"></div>
+        </div>
+      </div>
+
+      <!-- Indicador Táctil Inferior -->
+      <div id="tapInstruction" class="mt-8 text-center text-amber-200/50 text-sm font-sans tracking-widest animate-pulse">
+        para leer lo que nunca te dije
+      </div>
+    </section>
+
+    <!-- ==================== PASO 2: VISTA DE LA CARTA Y ESCRITURA ==================== -->
+    <section id="step2" class="hidden opacity-0 w-full h-[90%] sm:h-[95%] flex-col items-center justify-start transition-all duration-1000 relative">
+      
+      <!-- Pergamino -->
+      <div id="paper" class="paper-texture w-full h-full rounded-lg p-6 sm:p-8 flex flex-col text-stone-900 relative overflow-hidden custom-scroll">
+        
+        <!-- Encabezado Fijo superior del pergamino -->
+        <div class="text-center mb-4 flex-shrink-0">
+          <p class="text-xs sm:text-sm italic text-stone-600 font-handwriting tracking-wide">
+            En algún lugar del universo, hoy
+          </p>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-stone-900 mt-1 italic">
+            Para ti,
+          </h2>
+          <div class="w-12 h-[1px] bg-amber-800/20 mx-auto mt-2"></div>
+        </div>
+
+        <!-- Cuerpo del Texto Animado -->
+        <div id="textContainer" class="flex-grow overflow-y-auto custom-scroll text-xl sm:text-2xl leading-relaxed text-stone-900 font-letter-body font-semibold whitespace-pre-wrap pr-2 relative pb-16">
+          <span id="typedText"></span>
+          <!-- Cursor de escritura -->
+          <span id="cursor" class="inline-block w-[2px] h-6 bg-amber-900 ml-[1px] animate-pulse align-baseline"></span>
+        </div>
+
+        <!-- Pluma Flotante SVG Realista positioned dynamic -->
+        <div id="quillContainer" class="absolute pointer-events-none transition-all duration-75 z-40 opacity-0" style="left: 0px; top: 0px;">
+          <svg class="quill-pen quill-writing" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Pluma de Ave Estilizada con Tinta -->
+            <path d="M15 85 C25 60, 45 35, 85 10 C70 25, 60 45, 55 65 C52 75, 48 80, 15 85 Z" fill="url(#quillGradient)" />
+            <path d="M15 85 L85 10" stroke="#3b1f0e" stroke-width="1.5" stroke-linecap="round" />
+            <!-- Detalle de la punta/plumilla -->
+            <path d="M15 85 L10 90 L18 87 Z" fill="#1a0f07" />
+            <circle cx="10" cy="90" r="1.5" fill="#000000" />
+            <defs>
+              <linearGradient id="quillGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f5edd6" />
+                <stop offset="50%" stop-color="#d4b483" />
+                <stop offset="100%" stop-color="#8c5a2b" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== PASO 3: ESCENA FINAL DE LA ROSA ENCANTADA ==================== -->
+    <section id="step3" class="hidden opacity-0 w-full h-full flex-col items-center justify-center transition-all duration-1000 relative text-center">
+      
+      <!-- Pétalos Flotantes de la Rosa -->
+      <div id="petalsContainer" class="absolute inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-10 left-[20%] w-3 h-4 bg-rose-600 rounded-full animate-petal opacity-75"></div>
+        <div class="absolute top-5 right-[25%] w-2.5 h-3.5 bg-rose-500 rounded-full animate-petal opacity-80" style="animation-delay: 2s;"></div>
+        <div class="absolute top-12 left-[60%] w-3.5 h-4.5 bg-rose-700 rounded-full animate-petal opacity-70" style="animation-delay: 4s;"></div>
+      </div>
+
+      <!-- Cúpula de Cristal con la Rosa Encantada -->
+      <div class="relative w-48 h-64 sm:w-56 sm:h-72 flex items-center justify-center mb-6">
+        
+        <!-- Destello de fondo -->
+        <div class="absolute inset-0 bg-rose-600/15 rounded-full blur-2xl animate-pulse"></div>
+
+        <!-- Cúpula de Cristal / Fanal -->
+        <div class="relative w-full h-full border-2 border-amber-100/30 rounded-t-full bg-gradient-to-b from-white/10 via-transparent to-amber-950/20 shadow-[0_0_30px_rgba(225,29,72,0.2)] backdrop-blur-[1px] flex flex-col items-center justify-end pb-4 overflow-hidden">
+          
+          <!-- Reflejo de cristal -->
+          <div class="absolute top-4 left-4 w-6 h-36 bg-gradient-to-b from-white/30 to-transparent rounded-full rotate-[-15deg] blur-[1px]"></div>
+
+          <!-- Flor Rosa SVG Iluminada -->
+          <div class="relative z-10 flex flex-col items-center mb-2">
+            <!-- Capullo / Pétalos -->
+            <div class="relative w-12 h-14 sm:w-14 sm:h-16">
+              <!-- Luz interior de la rosa -->
+              <div class="absolute inset-0 bg-rose-500 rounded-full blur-md opacity-80"></div>
+              <!-- Pétalo principal -->
+              <div class="absolute inset-0 bg-gradient-to-br from-rose-400 via-rose-600 to-rose-900 rounded-tl-full rounded-br-full shadow-lg transform -rotate-12"></div>
+              <div class="absolute inset-1 bg-gradient-to-bl from-rose-300 via-rose-500 to-rose-800 rounded-tr-full rounded-bl-full shadow-inner transform rotate-12"></div>
+              <div class="absolute top-2 left-3 w-6 h-8 bg-gradient-to-r from-rose-400 to-rose-700 rounded-full opacity-90"></div>
+            </div>
+
+            <!-- Tallo -->
+            <div class="w-1.5 h-20 bg-gradient-to-b from-emerald-700 to-emerald-950 rounded-full relative">
+              <!-- Hojas -->
+              <div class="absolute top-4 -left-3 w-4 h-2 bg-emerald-700 rounded-tl-full rounded-br-full rotate-[-20deg]"></div>
+              <div class="absolute top-8 -right-3 w-4 h-2 bg-emerald-700 rounded-tr-full rounded-bl-full rotate-[20deg]"></div>
+            </div>
+          </div>
+
+          <!-- Pétalos caídos en la base dentro del fanal -->
+          <div class="absolute bottom-4 flex gap-3 z-10">
+            <div class="w-4 h-2 bg-rose-600 rounded-full rotate-[-15deg] opacity-90 shadow-sm"></div>
+            <div class="w-3 h-2 bg-rose-700 rounded-full rotate-[30deg] opacity-80 shadow-sm"></div>
+          </div>
+
+          <!-- Base del Fanal -->
+          <div class="absolute bottom-0 w-full h-5 bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border-t border-amber-600/40 rounded-b-md"></div>
+        </div>
+
+      </div>
+
+      <!-- Texto Final de la Carta -->
+      <div class="max-w-xs sm:max-w-sm px-2 text-amber-100/90 font-serif leading-relaxed text-sm sm:text-base space-y-4">
+        <p class="italic text-amber-200/90 font-light">
+          Y si algún día dudas,
+        </p>
+        <p class="text-stone-300/90 text-xs sm:text-sm font-sans font-light leading-relaxed">
+          recuerda que en este universo inmenso, entre todas las personas posibles, mi corazón te eligió a ti. Sin dudas, sin condiciones, sin final.
+        </p>
+        <p class="text-xl sm:text-2xl font-handwriting text-rose-300 pt-2">
+          Te amo.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Elemento Audio Generado por Sintetizador de Audio Web (Melodía Suave de Fondo sin Dependencia Externa) -->
+  <script>
+    // Audio con Web Audio API para asegurar que SIEMPRE suene música suave y romántica en cualquier dispositivo
+    class AmbientMusic {
+      constructor() {
+        this.ctx = null;
+        this.isPlaying = false;
+        this.interval = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      }
+
+      playNote(freq, duration = 2.5, delay = 0) {
+        if (!this.isPlaying || !this.ctx) return;
+        
+        setTimeout(() => {
+          if (!this.isPlaying) return;
+          try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+            // Envolvente suave estilo piano/arpa
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+          } catch (e) {}
+        }, delay * 1000);
+      }
+
+      start() {
+        this.init();
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+        this.isPlaying = true;
+        
+        // Melodía romántica en la menor / do mayor
+        const notes = [
+          220, 261.63, 329.63, 392, 440, // A3, C4, E4, G4, A4
+          349.23, 261.63, 329.63, 523.25, // F4, C4, E4, C5
+          196, 246.94, 293.66, 392, 440  // G3, B3, D4, G4, A4
+        ];
+
+        let step = 0;
+        const playSequence = () => {
+          if (!this.isPlaying) return;
+          const note = notes[step % notes.length];
+          this.playNote(note, 3.0, 0);
+          if (step % 2 === 0) {
+            this.playNote(note * 0.5, 4.0, 0.1); // Bajo suave
+          }
+          step++;
+        };
+
+        playSequence();
+        this.interval = setInterval(playSequence, 800);
+      }
+
+      stop() {
+        this.isPlaying = false;
+        if (this.interval) clearInterval(this.interval);
+      }
+    }
+
+    const musicPlayer = new AmbientMusic();
+
+    function toggleAudio() {
+      const musicBtn = document.getElementById('musicBtn');
+      const audioBars = document.getElementById('audioBars');
+      const musicIcon = document.getElementById('musicIcon');
+
+      if (musicPlayer.isPlaying) {
+        musicPlayer.stop();
+        audioBars.classList.add('hidden');
+        musicIcon.classList.remove('hidden');
+      } else {
+        musicPlayer.start();
+        audioBars.classList.remove('hidden');
+        musicIcon.classList.add('hidden');
+      }
+    }
+  </script>
+
+  <!-- Lógica Principal de la Carta Animada -->
+  <script>
+    // Texto exacto recibido en la especificación
+    const textToType = `Te escribo esta carta sin saber muy bien por dónde empezar, porque hay cosas que siento desde hace tanto que ya no sé cómo decirlas sin que se rompan.
+
+Si pudiera detener el tiempo, elegiría detenerlo en los días en que tu risa llena todo, y me quedaría ahí, guardándola.
+
+Pero como no puedo, escribo.
+
+Escribo para que sepas que te pienso, incluso cuando parece que no. Que te extraño, incluso cuando estoy contigo.
+
+Que te elijo, cada mañana, aunque a veces me cueste decirte cuánto.
+
+No sé qué nos depare el mundo, pero si sé que quiero descubrirlo contigo. Y si el mundo acaba mañana, quiero que mi última tarde sea una en la que estés tú.
+
+Gracias por existir. Gracias por quedarte. Gracias por elegirme.
+
+Tuya, siempre.`;
+
+    let charIndex = 0;
+    let isTyping = false;
+
+    // Inicialización al cargar la pantalla
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const header = document.getElementById('envelopeHeader');
+        header.classList.remove('opacity-0', '-translate-y-4');
+      }, 300);
+    });
+
+    // Actualiza la posición de la pluma para seguir al cursor de texto exacto
+    function updateQuillPosition() {
+      const cursor = document.getElementById('cursor');
+      const paper = document.getElementById('paper');
+      const quill = document.getElementById('quillContainer');
+
+      if (!cursor || !paper || !quill) return;
+
+      const cursorRect = cursor.getBoundingClientRect();
+      const paperRect = paper.getBoundingClientRect();
+
+      // Calcular la posición relativa dentro del pergamino
+      const left = cursorRect.left - paperRect.left - 12;
+      const top = cursorRect.top - paperRect.top - 45;
+
+      quill.style.left = `${left}px`;
+      quill.style.top = `${top}px`;
+    }
+
+    // Paso 1 -> Abrir Sobre e Iniciar Carta
+    function openLetter() {
+      const envelope = document.getElementById('envelope');
+      const tapInstruction = document.getElementById('tapInstruction');
+      const envelopeHeader = document.getElementById('envelopeHeader');
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+
+      if (!musicPlayer.isPlaying) {
+        toggleAudio();
+      }
+
+      envelope.classList.add('open');
+      tapInstruction.style.opacity = '0';
+
+      setTimeout(() => {
+        envelopeHeader.classList.add('opacity-0');
+        step1.classList.add('opacity-0', 'scale-95');
+
+        setTimeout(() => {
+          step1.classList.add('hidden');
+          step2.classList.remove('hidden');
+
+          setTimeout(() => {
+            step2.classList.remove('opacity-0');
+            startTyping();
+          }, 100);
+        }, 800);
+
+      }, 700);
+    }
+
+    // Paso 2 -> Efecto de Escritura Progresiva con Pluma
+    function startTyping() {
+      if (isTyping) return;
+      isTyping = true;
+
+      const typedTextElem = document.getElementById('typedText');
+      const textContainer = document.getElementById('textContainer');
+      const cursor = document.getElementById('cursor');
+      const quill = document.getElementById('quillContainer');
+
+      // Mostrar la pluma
+      quill.classList.remove('opacity-0');
+
+      function typeNextChar() {
+        if (charIndex < textToType.length) {
+          const char = textToType.charAt(charIndex);
+          
+          if (char === '\n') {
+            typedTextElem.innerHTML += '<br>';
+          } else {
+            typedTextElem.innerHTML += char;
+          }
+
+          charIndex++;
+
+          // Actualizar posición de la pluma
+          updateQuillPosition();
+
+          // Autoscroll suave
+          textContainer.scrollTop = textContainer.scrollHeight;
+
+          let delay = Math.floor(Math.random() * 35) + 40;
+          if (char === '.' || char === ',') delay += 180;
+          if (char === '\n') delay += 300;
+
+          setTimeout(typeNextChar, delay);
+        } else {
+          // Ocultar pluma y cursor al finalizar
+          quill.classList.add('opacity-0');
+          cursor.classList.add('hidden');
+          setTimeout(transitionToStep3, 2200);
+        }
+      }
+
+      typeNextChar();
+    }
+
+    // Paso 3 -> Transición a la Escena Final de la Rosa
+    function transitionToStep3() {
+      const step2 = document.getElementById('step2');
+      const step3 = document.getElementById('step3');
+
+      step2.classList.add('opacity-0', 'translate-y-4');
+
+      setTimeout(() => {
+        step2.classList.add('hidden');
+        step3.classList.remove('hidden');
+
+        setTimeout(() => {
+          step3.classList.remove('opacity-0');
+        }, 100);
+
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
